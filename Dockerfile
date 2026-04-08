@@ -17,18 +17,15 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create logs directory and set permissions
+# Create logs directory and copy application code with correct ownership
 RUN mkdir -p logs && chown appuser:appuser logs
-
-# Copy application code
-COPY app/ app/
-RUN chown -R appuser:appuser /app
+COPY --chown=appuser:appuser app/ app/
 
 # Switch to the non-root user
 USER appuser
 
 # Expose the port the app runs on
-EXPOSE 8000
+EXPOSE $PORT
 
 # Run the application
 CMD ["python", "-m", "app"]
