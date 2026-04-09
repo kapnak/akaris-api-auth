@@ -13,8 +13,7 @@ class Config(BaseSettings):
     ENV: str
     DEBUG: bool
     PORT: int
-    JWT_PRIVATE_KEY_PATH: str
-    JWT_PRIVATE_KEY_PASSWORD: str
+    JWT_PRIVATE_KEY_BASE64: str
     JWT_AUD: str
     JWT_EXPIRATION_HOURS: int
     APP_NAME: str

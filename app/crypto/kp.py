@@ -1,34 +1,27 @@
-import os
+import base64
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
-from app.config import config
+
+def load(key_b64: str):
+    """Load ECDSA private key from base64 DER string."""
+    try:
+        key_der = base64.b64decode(key_b64)
+        return serialization.load_der_private_key(key_der, password=None)
+    except Exception as e:
+        raise ValueError(f"Failed to load private key: {e}")
 
 
-def load(path: str, password: str):
-    """Load ECDSA private key from PEM file."""
-
-    if not os.path.exists(path):
-        raise FileNotFoundError(f'Unable to read "{path}" private key.')
-
-    with open(path, 'rb') as f:
-        private_key = serialization.load_pem_private_key(f.read(), password=password.encode())
-
-    return private_key
-
-
-def generate(path: str, password: str):
-    """Generate a new SECP256R1 private key."""
-
+def generate():
+    """Generate a new SECP256R1 private key and return its base64 DER representation."""
     private_key = ec.generate_private_key(ec.SECP256R1())
-    pem = private_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
+    der = private_key.private_bytes(
+        encoding=serialization.Encoding.DER,
         format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.BestAvailableEncryption(password.encode())
+        encryption_algorithm=serialization.NoEncryption()
     )
-    with open(path, 'wb') as f:
-        f.write(pem)
+    return base64.b64encode(der).decode('utf-8')
 
 
 if __name__ == '__main__':
-    generate(config.JWT_PRIVATE_KEY_PATH, config.JWT_PRIVATE_KEY_PASSWORD)
+    print(generate())

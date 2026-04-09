@@ -7,7 +7,7 @@ from app.crypto import kp
 
 log = logging.getLogger(__name__)
 
-private_key = kp.load(config.JWT_PRIVATE_KEY_PATH, password=config.JWT_PRIVATE_KEY_PASSWORD)
+private_key = kp.load(config.JWT_PRIVATE_KEY_BASE64)
 public_key = private_key.public_key()
 
 log.info(f'Trusted auth public key: {public_key}')
