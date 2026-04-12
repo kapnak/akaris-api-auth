@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
 from app.crypto import eip712
 from app.crypto.jwt_ import create_jwt, jwk
-from app.models import EIP712VariableData, EIP712AuthRequest, AuthResponse
+from app.models import EIP712VariableData, EIP712AuthRequest, AuthResponse, EIP712TypedDataResponse
 from app.config import config
 from app.logger import setup_logging
 
@@ -38,7 +38,7 @@ async def health_check():
     return {"status": "ok"}
 
 
-@app.get("/eip712")
+@app.get("/eip712", response_model=EIP712TypedDataResponse)
 async def get_eip712_typed_data(
         eip712_variable_data: EIP712VariableData = Depends()
 ):

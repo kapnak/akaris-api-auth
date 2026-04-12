@@ -28,3 +28,15 @@ class EIP712AuthRequest(BaseModel):
 
 class AuthResponse(BaseModel):
     jwt: str
+
+
+class EIP712TypeField(BaseModel):
+    name: str
+    type: str
+
+
+class EIP712TypedDataResponse(BaseModel):
+    types: dict[str, list[EIP712TypeField]]
+    primaryType: str
+    domain: DomainData
+    message: MessageData
