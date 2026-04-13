@@ -1,0 +1,49 @@
+name: Auto Versioning
+
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - 'VERSION'
+      - '.github/workflows/**'
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate and Update Version
+        id: versioning
+        run: |
+          CURRENT_VERSION=$(cat VERSION)
+          # Extract base version (major.minor.patch)
+          BASE_VERSION=$(echo "$CURRENT_VERSION" | cut -d'-' -f1)
+          IFS='.' read -r major minor patch <<< "$BASE_VERSION"
+
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            # Increment patch for main
+            NEW_PATCH=$((patch + 1))
+            NEW_VERSION="$major.$minor.$NEW_PATCH"
+          else
+            # Append branch and run number for other branches
+            # Clean branch name for version compatibility (replace non-alphanumeric with dot)
+            CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9]/./g')
+            NEW_VERSION="$BASE_VERSION-$CLEAN_BRANCH.${{ github.run_number }}"
+          fi
+
+          echo "$NEW_VERSION" > VERSION
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          git commit -m "chore: update version to ${{ steps.versioning.outputs.new_version }} [skip ci]"
+          git push
