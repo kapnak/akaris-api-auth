@@ -4,7 +4,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 
 class JSONFormatter(logging.Formatter):
@@ -65,7 +65,7 @@ class ColoredFormatter(logging.Formatter):
 def setup_logging(
         app_name: str = __name__,
         log_level: str = "INFO",
-        log_dir: str = "logs",
+        log_dir: Optional[str] = None,
         max_bytes: int = 10 * 1024 * 1024,  # 10MB
         backup_count: int = 5,
         json_logs: bool = True,
@@ -77,7 +77,7 @@ def setup_logging(
     Args:
         app_name: Name of the application (used for logger name)
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        log_dir: Directory to store log files
+        log_dir: Directory to store log files (optional)
         max_bytes: Maximum size of each log file before rotation
         backup_count: Number of backup files to keep
         json_logs: Enable JSON formatted file logging
@@ -88,10 +88,6 @@ def setup_logging(
     """
 
     log_level = log_level.upper()
-
-    # Create logs directory if it doesn't exist
-    log_path = Path(log_dir)
-    log_path.mkdir(exist_ok=True)
 
     # Get the root logger
     root_logger = logging.getLogger()
@@ -111,43 +107,48 @@ def setup_logging(
         console_handler.setFormatter(console_formatter)
         root_logger.addHandler(console_handler)
 
-    # File Handler - Standard format
-    file_handler = RotatingFileHandler(
-        log_path / f"{app_name}.log",
-        maxBytes=max_bytes,
-        backupCount=backup_count,
-        encoding="utf-8"
-    )
-    file_handler.setLevel(log_level)
-    file_formatter = logging.Formatter(
-        "%(asctime)s | %(levelname)-8s | %(name)s | %(module)s:%(funcName)s:%(lineno)d | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
-    file_handler.setFormatter(file_formatter)
-    root_logger.addHandler(file_handler)
+    # File Handlers
+    if log_dir:
+        log_path = Path(log_dir)
+        log_path.mkdir(exist_ok=True)
 
-    # JSON File Handler - Structured logging
-    if json_logs:
-        json_handler = RotatingFileHandler(
-            log_path / f"{app_name}_json.log",
+        # File Handler - Standard format
+        file_handler = RotatingFileHandler(
+            log_path / f"{app_name}.log",
             maxBytes=max_bytes,
             backupCount=backup_count,
             encoding="utf-8"
         )
-        json_handler.setLevel(log_level)
-        json_handler.setFormatter(JSONFormatter())
-        root_logger.addHandler(json_handler)
+        file_handler.setLevel(log_level)
+        file_formatter = logging.Formatter(
+            "%(asctime)s | %(levelname)-8s | %(name)s | %(module)s:%(funcName)s:%(lineno)d | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        file_handler.setFormatter(file_formatter)
+        root_logger.addHandler(file_handler)
 
-    # Error File Handler - Only errors and critical
-    error_handler = RotatingFileHandler(
-        log_path / f"{app_name}_error.log",
-        maxBytes=max_bytes,
-        backupCount=backup_count,
-        encoding="utf-8"
-    )
-    error_handler.setLevel(logging.ERROR)
-    error_handler.setFormatter(file_formatter)
-    root_logger.addHandler(error_handler)
+        # JSON File Handler - Structured logging
+        if json_logs:
+            json_handler = RotatingFileHandler(
+                log_path / f"{app_name}_json.log",
+                maxBytes=max_bytes,
+                backupCount=backup_count,
+                encoding="utf-8"
+            )
+            json_handler.setLevel(log_level)
+            json_handler.setFormatter(JSONFormatter())
+            root_logger.addHandler(json_handler)
+
+        # Error File Handler - Only errors and critical
+        error_handler = RotatingFileHandler(
+            log_path / f"{app_name}_error.log",
+            maxBytes=max_bytes,
+            backupCount=backup_count,
+            encoding="utf-8"
+        )
+        error_handler.setLevel(logging.ERROR)
+        error_handler.setFormatter(file_formatter)
+        root_logger.addHandler(error_handler)
 
     # Configure uvicorn loggers
     uvicorn_access = logging.getLogger("uvicorn.access")
@@ -168,6 +169,9 @@ def setup_logging(
 
     app_logger.info(f"Logging initialized for {app_name}")
     app_logger.info(f"Log level: {log_level}")
-    app_logger.info(f"Log directory: {log_path.absolute()}")
+    if log_dir:
+        app_logger.info(f"Log directory: {Path(log_dir).absolute()}")
+    else:
+        app_logger.info("File logging disabled (no log directory provided)")
 
     return app_logger

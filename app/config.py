@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,14 +13,28 @@ print(f'Using DOTENV: {DOTENV}')
 
 class Config(BaseSettings):
     ENV: str
-    DEBUG: bool
+    DEBUG: bool = False
     PORT: int = 80
     JWT_PRIVATE_KEY_BASE64: str
     JWT_AUD: str
     JWT_EXPIRATION_HOURS: int
     LOG_LEVEL: str
-    LOG_DIR: str
+    LOG_DIR: Optional[str] = None
     EIP_MESSAGE: str
+
+    @field_validator('DEBUG', mode='before')
+    @classmethod
+    def empty_str_to_false(cls, v):
+        if v == '':
+            return False
+        return v
+
+    @field_validator('LOG_DIR', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v):
+        if v == '':
+            return None
+        return v
 
     @field_validator('PORT', mode='before')
     @classmethod
