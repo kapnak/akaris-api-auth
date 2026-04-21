@@ -2,6 +2,9 @@ from pydantic import BaseModel
 
 
 class EIP712VariableData(BaseModel):
+    """
+    Represents variable data for EIP-712 typed data generation.
+    """
     address: str
     timestamp: int
     jti: str
